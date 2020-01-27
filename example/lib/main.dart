@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
                 child: FlutterMap(
                   options: MapOptions(
                     center: LatLng(47.9187, 106.917782),
-                    zoom: 13.0,
+                    zoom: 8.0,
                     plugins: [EsriPlugin()],
                   ),
                   layers: [
@@ -45,8 +45,9 @@ class _MyAppState extends State<MyApp> {
                     ),
 //                  MarkerLayerOptions(markers: markers),
                     FeatureLayerOptions(
-                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
-                      geometryType:"point",
+//                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
+                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Duureg_hil/FeatureServer/0",
+                      geometryType:"polygon",
                       marker: Marker(
                         width: 30.0,
                         height: 30.0,
@@ -58,8 +59,9 @@ class _MyAppState extends State<MyApp> {
                       polygonOptions: PolygonOptions(
                           borderColor: Colors.blueAccent,
                           color: Colors.black12,
-                          borderStrokeWidth: 3),
+                          borderStrokeWidth: 2),
                     ),
+
                   ],
                 ),
               ),
