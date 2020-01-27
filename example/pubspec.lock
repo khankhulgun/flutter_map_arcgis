@@ -86,7 +86,7 @@ packages:
     source: hosted
     version: "0.1.3"
   dio:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: dio
       url: "https://pub.dartlang.org"
@@ -112,13 +112,13 @@ packages:
     source: hosted
     version: "3.0.0"
   flutter_map:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_map
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.8.2"
-  flutter_plugin_arcgis:
+  flutter_map_arcgis:
     dependency: "direct dev"
     description:
       path: ".."

@@ -1,4 +1,4 @@
-package mn.khankhulgun.flutter_plugin_arcgis
+package mn.khankhulgun.flutter_map_arcgis
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -8,11 +8,11 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 
-/** FlutterPluginArcgisPlugin */
-public class FlutterPluginArcgisPlugin: FlutterPlugin, MethodCallHandler {
+/** FlutterMapArcgisPlugin */
+public class FlutterMapArcgisPlugin: FlutterPlugin, MethodCallHandler {
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    val channel = MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "flutter_plugin_arcgis")
-    channel.setMethodCallHandler(FlutterPluginArcgisPlugin());
+    val channel = MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "flutter_map_arcgis")
+    channel.setMethodCallHandler(FlutterMapArcgisPlugin());
   }
 
   // This static function is optional and equivalent to onAttachedToEngine. It supports the old
@@ -27,8 +27,8 @@ public class FlutterPluginArcgisPlugin: FlutterPlugin, MethodCallHandler {
   companion object {
     @JvmStatic
     fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "flutter_plugin_arcgis")
-      channel.setMethodCallHandler(FlutterPluginArcgisPlugin())
+      val channel = MethodChannel(registrar.messenger(), "flutter_map_arcgis")
+      channel.setMethodCallHandler(FlutterMapArcgisPlugin())
     }
   }
 

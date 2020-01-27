@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
-import 'package:flutter_plugin_arcgis/flutter_plugin_arcgis.dart';
+import 'package:flutter_map_arcgis/flutter_map_arcgis.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
 

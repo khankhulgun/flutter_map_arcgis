@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_plugin_arcgis/flutter_plugin_arcgis.dart';
+import 'package:flutter_map_arcgis/flutter_map_arcgis.dart';
 
 void main() {
-  const MethodChannel channel = MethodChannel('flutter_plugin_arcgis');
+  const MethodChannel channel = MethodChannel('flutter_map_arcgis');
 
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -17,7 +17,4 @@ void main() {
     channel.setMockMethodCallHandler(null);
   });
 
-  test('getPlatformVersion', () async {
-    expect(await FlutterPluginArcgis.platformVersion, '42');
-  });
 }

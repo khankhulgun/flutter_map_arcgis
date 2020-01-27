@@ -1,4 +1,4 @@
-group 'mn.khankhulgun.flutter_plugin_arcgis'
+group 'mn.khankhulgun.flutter_map_arcgis'
 version '1.0-SNAPSHOT'
 
 buildscript {

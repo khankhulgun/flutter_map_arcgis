@@ -1,6 +1,6 @@
-# flutter_plugin_arcgis_example
+# flutter_map_arcgis_example
 
-Demonstrates how to use the flutter_plugin_arcgis plugin.
+Demonstrates how to use the flutter_map_arcgis plugin.
 
 ## Getting Started
 

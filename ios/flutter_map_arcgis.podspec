@@ -1,13 +1,13 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint flutter_plugin_arcgis.podspec' to validate before publishing.
+# Run `pod lib lint flutter_map_arcgis.podspec' to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'flutter_plugin_arcgis'
+  s.name             = 'flutter_map_arcgis'
   s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin.'
+  s.summary          = 'Arcgis plugin for flutter map'
   s.description      = <<-DESC
-A new Flutter plugin.
+Arcgis plugin for flutter map
                        DESC
   s.homepage         = 'http://example.com'
   s.license          = { :file => '../LICENSE' }

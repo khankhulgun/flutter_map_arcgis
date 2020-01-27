@@ -1,4 +1,4 @@
-package mn.khankhulgun.flutter_plugin_arcgis_example
+package mn.khankhulgun.flutter_map_arcgis_example
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

@@ -1,10 +1,10 @@
 import Flutter
 import UIKit
 
-public class SwiftFlutterPluginArcgisPlugin: NSObject, FlutterPlugin {
+public class SwiftFlutterMapArcgisPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "flutter_plugin_arcgis", binaryMessenger: registrar.messenger())
-    let instance = SwiftFlutterPluginArcgisPlugin()
+    let channel = FlutterMethodChannel(name: "flutter_map_arcgis", binaryMessenger: registrar.messenger())
+    let instance = SwiftFlutterMapArcgisPlugin()
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 

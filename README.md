@@ -1,4 +1,4 @@
-# Flutter Map plugin for ArcGIS/Esri
+# Flutter Map plugin for ArcGIS Esri
 
 # Currently support feature layer and feature cluster
 We are working on more features
