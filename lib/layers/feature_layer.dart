@@ -248,20 +248,23 @@ class _FeatureLayerState extends State<FeatureLayer>{
       var features_ =  <Marker>[];
 
       for (var feature in response.data["features"]) {
-        features_.add(
-            Marker(
-              width: widget.options.marker.width,
-              height: widget.options.marker.height,
-              point: LatLng(feature["geometry"]["y"], feature["geometry"]["x"]),
-              builder:(ctx) => Container(
-                  child: GestureDetector(
-                    onTap: () {
+        if(widget.options.geometryType == "point"){
+          features_.add(
+              Marker(
+                width: widget.options.marker.width,
+                height: widget.options.marker.height,
+                point: LatLng(feature["geometry"]["y"], feature["geometry"]["x"]),
+                builder:(ctx) => Container(
+                    child: GestureDetector(
+                      onTap: () {
                         widget.options.onTap(feature["attributes"]);
-                    },
-                    child: widget.options.marker.builder(ctx),
-                  )),
-            )
-        );
+                      },
+                      child: widget.options.marker.builder(ctx),
+                    )),
+              )
+          );
+        }
+
       }
 
       activeRequests++;

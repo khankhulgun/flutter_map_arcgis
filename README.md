@@ -38,6 +38,7 @@ Add it in you FlutterMap and configure it using `FeatureLayerOptions`.
           subdomains: ['a', 'b', 'c'],
         ),
         FeatureLayerOptions(
+          geometryType:"point",
           url:"https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
           marker: Marker(
              width: 30.0,

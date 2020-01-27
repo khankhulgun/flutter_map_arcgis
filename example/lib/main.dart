@@ -20,7 +20,6 @@ class _MyAppState extends State<MyApp> {
     super.initState();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -34,7 +33,7 @@ class _MyAppState extends State<MyApp> {
                 child: FlutterMap(
                   options: MapOptions(
                     center: LatLng(47.9187, 106.917782),
-                    zoom: 15.0,
+                    zoom: 13.0,
                     plugins: [EsriPlugin()],
                   ),
                   layers: [
@@ -42,20 +41,12 @@ class _MyAppState extends State<MyApp> {
                       urlTemplate:
                       'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
                       subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-                      // For example purposes. It is recommended to use
-                      // TileProvider with a caching and retry strategy, like
-                      // NetworkTileProvider or CachedNetworkTileProvider
                       tileProvider: NonCachingNetworkTileProvider(),
                     ),
 //                  MarkerLayerOptions(markers: markers),
                     FeatureLayerOptions(
-                      maxClusterRadius: 120,
-                      size: Size(40, 40),
-                      fitBoundsOptions: FitBoundsOptions(
-                        padding: EdgeInsets.all(50),
-                      ),
-                      url:
-                      "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
+                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
+                      geometryType:"point",
                       marker: Marker(
                         width: 30.0,
                         height: 30.0,

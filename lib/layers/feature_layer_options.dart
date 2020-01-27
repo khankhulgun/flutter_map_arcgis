@@ -57,9 +57,11 @@ class FeatureLayerOptions extends LayerOptions {
   /// A cluster will cover at most this many pixels from its center
   final int maxClusterRadius;
 
-
-  /// A cluster will cover at most this many pixels from its center
+  /// Feature layer URL
   final String url;
+
+  /// Feature layer URL
+  final String geometryType;
 
   /// Options for fit bounds
   final FitBoundsOptions fitBoundsOptions;
@@ -97,6 +99,7 @@ class FeatureLayerOptions extends LayerOptions {
 
   FeatureLayerOptions({
     @required this.url,
+    @required this.geometryType,
     this.marker,
     this.size = const Size(30, 30),
     this.computeSize,
