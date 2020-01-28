@@ -8,6 +8,7 @@ import 'feature_layer_options.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter_map/src/core/util.dart' as util;
 
+
 import 'package:dio/dio.dart';
 import 'dart:convert';
 
@@ -53,6 +54,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
     _resetView();
     //requestFeatures(widget.map.getBounds());
     _moveSub = widget.stream.listen((_) => _handleMove());
+
 
   }
 
@@ -276,7 +278,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
             points.add(LatLng(point_[1], point_[0]));
           }
 
-          features_.add(new PolygonEsri(
+          features_.add(PolygonEsri(
             points: points,
             borderStrokeWidth: widget.options.polygonOptions.borderStrokeWidth,
             color: widget.options.polygonOptions.color,
@@ -303,6 +305,34 @@ class _FeatureLayerState extends State<FeatureLayer> {
     } catch (e) {
       print(e);
     }
+  }
+
+  void findTapedPolygon(LatLng position){
+    print(position);
+    for (var polygon in features) {
+      var isInclude = _pointInPolygon(position, polygon.points);
+      if (isInclude) {
+        widget.options.onTap(polygon.attributes);
+      }
+    }
+  }
+
+  LatLng _offsetToCrs(Offset offset) {
+    // Get the widget's offset
+    var renderObject = context.findRenderObject() as RenderBox;
+    var width = renderObject.size.width;
+    var height = renderObject.size.height;
+
+    // convert the point to global coordinates
+    var localPoint = _offsetToPoint(offset);
+    var localPointCenterDistance =
+    CustomPoint((width / 2) - localPoint.x, (height / 2) - localPoint.y);
+    var mapCenter = widget.map.project(widget.map.center);
+    var point = mapCenter - localPointCenterDistance;
+    return widget.map.unproject(point);
+  }
+  CustomPoint _offsetToPoint(Offset offset) {
+    return CustomPoint(offset.dx, offset.dy);
   }
 
   @override
@@ -380,34 +410,27 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
         elements.add(
             GestureDetector(
-                onTapDown: (details) {
+                onTapUp: (details) {
                   RenderBox box = context.findRenderObject();
                   final offset = box.globalToLocal(details.globalPosition);
 
+                  var latLng = _offsetToCrs(offset);
+                  findTapedPolygon(latLng);
 
-//                  for (var pol in features) {
-//
-//                    print(features.length);
-//
-//                    print(PolygonPainter(pol).hitTest(offset, {Size size}));
-//                  }
-
-
-                  print("hihi");
                 },
-              child:CustomPaint(
+              child: CustomPaint(
                 painter:  PolygonPainter(polygon),
                 size: size,
               )
             ),
         );
 
-        elements.add(
-            CustomPaint(
-              painter:  PolygonPainter(polygon),
-              size: size,
-            )
-        );
+//        elements.add(
+//            CustomPaint(
+//              painter:  PolygonPainter(polygon),
+//              size: size,
+//            )
+//        );
 
       }
     }
@@ -442,9 +465,10 @@ class PolygonEsri extends Polygon {
   }
 }
 
-bool _pointInPolygon(LatLng position, Polygon polygon) {
+
+bool _pointInPolygon(LatLng position, List<LatLng> points) {
   // Check if the point sits exactly on a vertex
-  var vertexPosition = polygon.points
+  var vertexPosition = points
       .firstWhere((point) => point == position, orElse: () => null);
   if (vertexPosition != null) {
     return true;
@@ -452,11 +476,11 @@ bool _pointInPolygon(LatLng position, Polygon polygon) {
 
   // Check if the point is inside the polygon or on the boundary
   int intersections = 0;
-  var verticesCount = polygon.points.length;
+  var verticesCount = points.length;
 
   for (int i = 1; i < verticesCount; i++) {
-    LatLng vertex1 = polygon.points[i - 1];
-    LatLng vertex2 = polygon.points[i];
+    LatLng vertex1 = points[i - 1];
+    LatLng vertex2 = points[i];
 
     // Check if point is on an horizontal polygon boundary
     if (vertex1.latitude == vertex2.latitude &&

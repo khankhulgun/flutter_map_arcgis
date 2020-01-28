@@ -35,6 +35,7 @@ class _MyAppState extends State<MyApp> {
                     center: LatLng(47.9187, 106.917782),
                     zoom: 8.0,
                     plugins: [EsriPlugin()],
+
                   ),
                   layers: [
                     TileLayerOptions(
