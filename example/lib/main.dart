@@ -46,15 +46,15 @@ class _MyAppState extends State<MyApp> {
                     ),
 //                  MarkerLayerOptions(markers: markers),
                     FeatureLayerOptions(
-//                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
-                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Duureg_hil/FeatureServer/0",
-                      geometryType:"polygon",
+                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
+//                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Duureg_hil/FeatureServer/0",
+                      geometryType:"point",
                       marker: Marker(
                         width: 30.0,
                         height: 30.0,
                         builder: (ctx) => Icon(Icons.pin_drop),
                       ),
-                      onTap: (attributes) {
+                      onTap: (attributes, LatLng location) {
                         print(attributes);
                       },
                       polygonOptions: PolygonOptions(

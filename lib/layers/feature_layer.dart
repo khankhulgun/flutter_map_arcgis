@@ -8,7 +8,6 @@ import 'feature_layer_options.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter_map/src/core/util.dart' as util;
 
-
 import 'package:dio/dio.dart';
 import 'dart:convert';
 
@@ -28,8 +27,8 @@ class FeatureLayer extends StatefulWidget {
 }
 
 class _FeatureLayerState extends State<FeatureLayer> {
-  var featuresPre = <dynamic>[];
-  var features = <dynamic>[];
+  List<dynamic> featuresPre = <dynamic>[];
+  List<dynamic> features = <dynamic>[];
 
   StreamSubscription _moveSub;
   StreamSubscription _onTap;
@@ -54,13 +53,18 @@ class _FeatureLayerState extends State<FeatureLayer> {
     _resetView();
     //requestFeatures(widget.map.getBounds());
     _moveSub = widget.stream.listen((_) => _handleMove());
-
-
   }
 
-  void _handleMove2(bool data) {
+  @override
+  void dispose() {
 
+    super.dispose();
+    featuresPre = <dynamic>[];
+    features = <dynamic>[];
+    _moveSub?.cancel();
   }
+
+  void _handleMove2(bool data) {}
 
   void _handleMove() {
     if (isMoving) {
@@ -75,7 +79,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
   void _resetView() {
     setState(() {
-      featuresPre = <Marker>[];
+      featuresPre = <dynamic>[];
 //      features = null;
     });
     _setView(widget.map.center, widget.map.zoom);
@@ -249,10 +253,9 @@ class _FeatureLayerState extends State<FeatureLayer> {
       var bounds_ =
           '"xmin":${bounds.southWest.longitude},"ymin":${bounds.southWest.latitude},"xmax":${bounds.northEast.longitude},"ymax":${bounds.northEast.latitude}';
 
-      var URL =
-          '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},${bounds_}}&maxRecordCountFactor=30&outFields=*&outSR=4326&resultType=tile&returnExceededLimitFeatures=false&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
+      var URL = '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},${bounds_}}&maxRecordCountFactor=30&outFields=*&outSR=4326&resultType=tile&returnExceededLimitFeatures=false&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
 
-      print(URL);
+
       Response response = await Dio().get(URL);
 
       var features_ = <dynamic>[];
@@ -266,7 +269,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
             builder: (ctx) => Container(
                 child: GestureDetector(
               onTap: () {
-                widget.options.onTap(feature["attributes"]);
+                widget.options.onTap(feature["attributes"], LatLng(0.0, 0.0));
               },
               child: widget.options.marker.builder(ctx),
             )),
@@ -307,12 +310,15 @@ class _FeatureLayerState extends State<FeatureLayer> {
     }
   }
 
-  void findTapedPolygon(LatLng position){
-    print(position);
+  void findTapedPolygon(LatLng position) {
+
     for (var polygon in features) {
       var isInclude = _pointInPolygon(position, polygon.points);
       if (isInclude) {
-        widget.options.onTap(polygon.attributes);
+
+        widget.options.onTap(polygon.attributes, position);
+      } else {
+        widget.options.onTap(null, position);
       }
     }
   }
@@ -326,17 +332,19 @@ class _FeatureLayerState extends State<FeatureLayer> {
     // convert the point to global coordinates
     var localPoint = _offsetToPoint(offset);
     var localPointCenterDistance =
-    CustomPoint((width / 2) - localPoint.x, (height / 2) - localPoint.y);
+        CustomPoint((width / 2) - localPoint.x, (height / 2) - localPoint.y);
     var mapCenter = widget.map.project(widget.map.center);
     var point = mapCenter - localPointCenterDistance;
     return widget.map.unproject(point);
   }
+
   CustomPoint _offsetToPoint(Offset offset) {
     return CustomPoint(offset.dx, offset.dy);
   }
 
   @override
   Widget build(BuildContext context) {
+
     if (widget.options.geometryType == "point") {
       return _buildMarkers(context);
     } else {
@@ -354,29 +362,31 @@ class _FeatureLayerState extends State<FeatureLayer> {
     var elements = <Widget>[];
     if (features.isNotEmpty) {
       for (var markerOpt in features) {
-        var pos = widget.map.project(markerOpt.point);
-        pos = pos.multiplyBy(
-                widget.map.getZoomScale(widget.map.zoom, widget.map.zoom)) -
-            widget.map.getPixelOrigin();
+        if (!(markerOpt is PolygonEsri)) {
+          var pos = widget.map.project(markerOpt.point);
+          pos = pos.multiplyBy(
+                  widget.map.getZoomScale(widget.map.zoom, widget.map.zoom)) -
+              widget.map.getPixelOrigin();
 
-        var pixelPosX =
-            (pos.x - (markerOpt.width - markerOpt.anchor.left)).toDouble();
-        var pixelPosY =
-            (pos.y - (markerOpt.height - markerOpt.anchor.top)).toDouble();
+          var pixelPosX =
+              (pos.x - (markerOpt.width - markerOpt.anchor.left)).toDouble();
+          var pixelPosY =
+              (pos.y - (markerOpt.height - markerOpt.anchor.top)).toDouble();
 
-        if (!_boundsContainsMarker(markerOpt)) {
-          continue;
+          if (!_boundsContainsMarker(markerOpt)) {
+            continue;
+          }
+
+          elements.add(
+            Positioned(
+              width: markerOpt.width,
+              height: markerOpt.height,
+              left: pixelPosX,
+              top: pixelPosY,
+              child: markerOpt.builder(context),
+            ),
+          );
         }
-
-        elements.add(
-          Positioned(
-            width: markerOpt.width,
-            height: markerOpt.height,
-            left: pixelPosX,
-            top: pixelPosY,
-            child: markerOpt.builder(context),
-          ),
-        );
       }
     }
 
@@ -390,25 +400,24 @@ class _FeatureLayerState extends State<FeatureLayer> {
   Widget _buildPoygons(BuildContext context, Size size) {
     var elements = <Widget>[];
     if (features.isNotEmpty) {
-
       for (var polygon in features) {
-        polygon.offsets.clear();
-        var i = 0;
+        if (polygon is PolygonEsri) {
+          polygon.offsets.clear();
+          var i = 0;
 
-        for (var point in polygon.points) {
-          var pos = widget.map.project(point);
-          pos = pos.multiplyBy(
-                  widget.map.getZoomScale(widget.map.zoom, widget.map.zoom)) -
-              widget.map.getPixelOrigin();
-          polygon.offsets.add(Offset(pos.x.toDouble(), pos.y.toDouble()));
-          if (i > 0 && i < polygon.points.length) {
+          for (var point in polygon.points) {
+            var pos = widget.map.project(point);
+            pos = pos.multiplyBy(
+                    widget.map.getZoomScale(widget.map.zoom, widget.map.zoom)) -
+                widget.map.getPixelOrigin();
             polygon.offsets.add(Offset(pos.x.toDouble(), pos.y.toDouble()));
+            if (i > 0 && i < polygon.points.length) {
+              polygon.offsets.add(Offset(pos.x.toDouble(), pos.y.toDouble()));
+            }
+            i++;
           }
-          i++;
-        }
 
-
-        elements.add(
+          elements.add(
             GestureDetector(
                 onTapUp: (details) {
                   RenderBox box = context.findRenderObject();
@@ -416,14 +425,18 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
                   var latLng = _offsetToCrs(offset);
                   findTapedPolygon(latLng);
-
                 },
-              child: CustomPaint(
-                painter:  PolygonPainter(polygon),
-                size: size,
-              )
-            ),
-        );
+                child: CustomPaint(
+                  painter: PolygonPainter(polygon),
+                  size: size,
+                )),
+          );
+//          elements.add(
+//              CustomPaint(
+//                painter: PolygonPainter(polygon),
+//                size: size,
+//              )
+//          );
 
 //        elements.add(
 //            CustomPaint(
@@ -432,6 +445,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
 //            )
 //        );
 
+        }
       }
     }
 
@@ -465,11 +479,10 @@ class PolygonEsri extends Polygon {
   }
 }
 
-
 bool _pointInPolygon(LatLng position, List<LatLng> points) {
   // Check if the point sits exactly on a vertex
-  var vertexPosition = points
-      .firstWhere((point) => point == position, orElse: () => null);
+  var vertexPosition =
+      points.firstWhere((point) => point == position, orElse: () => null);
   if (vertexPosition != null) {
     return true;
   }
@@ -495,8 +508,8 @@ bool _pointInPolygon(LatLng position, List<LatLng> points) {
         position.longitude <= max(vertex1.longitude, vertex2.longitude) &&
         vertex1.latitude != vertex2.latitude) {
       var xinters = (position.latitude - vertex1.latitude) *
-          (vertex2.longitude - vertex1.longitude) /
-          (vertex2.latitude - vertex1.latitude) +
+              (vertex2.longitude - vertex1.longitude) /
+              (vertex2.latitude - vertex1.latitude) +
           vertex1.longitude;
       if (xinters == position.longitude) {
         // Check if point is on the polygon boundary (other than horizontal)

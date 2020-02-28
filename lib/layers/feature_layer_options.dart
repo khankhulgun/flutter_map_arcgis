@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:latlong/latlong.dart';
 
 class PolygonOptions {
   final Color color;
@@ -95,7 +96,7 @@ class FeatureLayerOptions extends LayerOptions {
   final PolygonOptions polygonOptions;
 
   /// Function to call when a Marker is tapped
-  final void Function(dynamic attributes) onTap;
+  final void Function(dynamic attributes, LatLng location) onTap;
 
   FeatureLayerOptions({
     @required this.url,
