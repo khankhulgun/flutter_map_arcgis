@@ -270,9 +270,18 @@ class _FeatureLayerState extends State<FeatureLayer> {
         for (var feature in jsonData["features"]) {
           if (widget.options.geometryType == "point") {
 
+            var render = widget.options.render(feature["attributes"]);
+
+            if(render == null){
+              render = Marker(
+                width: 30.0,
+                height: 30.0,
+                builder: (ctx) => Icon(Icons.pin_drop),
+              );
+            }
             features_.add(Marker(
-              width: widget.options.marker.width,
-              height: widget.options.marker.height,
+              width: render.width,
+              height: render.height,
 
               point: LatLng(feature["geometry"]["y"].toDouble(), feature["geometry"]["x"].toDouble()),
               builder: (ctx) => Container(
@@ -280,7 +289,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
                     onTap: () {
                       widget.options.onTap(feature["attributes"], LatLng(0.0, 0.0));
                     },
-                    child: widget.options.marker.builder(ctx),
+                    child: render.builder(ctx),
                   )),
             ));
           } else if (widget.options.geometryType == "polygon") {
@@ -294,12 +303,22 @@ class _FeatureLayerState extends State<FeatureLayer> {
                     points.add(LatLng(point_[1].toDouble(), point_[0].toDouble()));
                   }
 
+                  var render = widget.options.render(feature["attributes"]);
+
+                  if(render == null){
+                    render = PolygonOptions(
+                        borderColor: Colors.blueAccent,
+                        color: Colors.black12,
+                        borderStrokeWidth: 2
+                    );
+                  }
+
                   features_.add(PolygonEsri(
                     points: points,
-                    borderStrokeWidth: widget.options.polygonOptions.borderStrokeWidth,
-                    color: widget.options.polygonOptions.color,
-                    borderColor: widget.options.polygonOptions.borderColor,
-                    isDotted: widget.options.polygonOptions.isDotted,
+                    borderStrokeWidth: render.borderStrokeWidth,
+                    color: render.color,
+                    borderColor: render.borderColor,
+                    isDotted: render.isDotted,
                     attributes: feature["attributes"],
                   ));
             }

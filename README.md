@@ -42,7 +42,7 @@ Add it in you FlutterMap and configure it using `FeatureLayerOptions`.
                         urlTemplate:
                         'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
                         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-                        tileProvider: NonCachingNetworkTileProvider(),
+                        tileProvider: CachedNetworkTileProvider(),
                       ),
                       FeatureLayerOptions(
                         url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Congressional_Districts/FeatureServer/0",
@@ -59,6 +59,7 @@ Add it in you FlutterMap and configure it using `FeatureLayerOptions`.
                             borderColor: Colors.blueAccent,
                             color: Colors.black12,
                             borderStrokeWidth: 2),
+                            
                       ),
                       FeatureLayerOptions(
                         url: "https://services8.arcgis.com/1p2fLWyjYVpl96Ty/arcgis/rest/services/Forest_Service_Recreation_Opportunities/FeatureServer/0",

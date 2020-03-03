@@ -42,39 +42,38 @@ class _MyAppState extends State<MyApp> {
                       urlTemplate:
                       'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
                       subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-                      tileProvider: NonCachingNetworkTileProvider(),
+                      tileProvider: CachedNetworkTileProvider(),
                     ),
                     FeatureLayerOptions(
                       url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Congressional_Districts/FeatureServer/0",
                       geometryType:"polygon",
-                      marker: Marker(
-                        width: 30.0,
-                        height: 30.0,
-                        builder: (ctx) => Icon(Icons.pin_drop),
-                      ),
                       onTap: (attributes, LatLng location) {
                         print(attributes);
                       },
-                      polygonOptions: PolygonOptions(
-                          borderColor: Colors.blueAccent,
-                          color: Colors.black12,
-                          borderStrokeWidth: 2),
+                      render: (dynamic attributes){
+                        // You can render by attribute
+                        return PolygonOptions(
+                            borderColor: Colors.blueAccent,
+                            color: Colors.black12,
+                            borderStrokeWidth: 2
+                        );
+                      },
+
                     ),
                     FeatureLayerOptions(
                       url: "https://services8.arcgis.com/1p2fLWyjYVpl96Ty/arcgis/rest/services/Forest_Service_Recreation_Opportunities/FeatureServer/0",
                       geometryType:"point",
-                      marker: Marker(
-                        width: 30.0,
-                        height: 30.0,
-                        builder: (ctx) => Icon(Icons.pin_drop),
-                      ),
+                      render:(dynamic attributes){
+                        // You can render by attribute
+                        return Marker(
+                          width: 30.0,
+                          height: 30.0,
+                          builder: (ctx) => Icon(Icons.pin_drop),
+                        );
+                      },
                       onTap: (attributes, LatLng location) {
                         print(attributes);
                       },
-                      polygonOptions: PolygonOptions(
-                          borderColor: Colors.blueAccent,
-                          color: Colors.black12,
-                          borderStrokeWidth: 2),
                     ),
 
                   ],

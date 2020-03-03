@@ -46,9 +46,6 @@ class FeatureLayerOptions extends LayerOptions {
   /// Cluster size
   final Size size;
 
-  /// Maker anchor
-  final Marker marker;
-
   /// Cluster compute size
   final Size Function(List<Marker>) computeSize;
 
@@ -89,11 +86,9 @@ class FeatureLayerOptions extends LayerOptions {
   /// Make it possible to provide custom function to calculate spiderfy shape positions
   final List<Point> Function(int, Point) spiderfyShapePositions;
 
-  /// If true show polygon then tap on cluster
-  final bool showPolygon;
 
-  /// Polygon's options that shown when tap cluster.
-  final PolygonOptions polygonOptions;
+  /// Render
+  final dynamic Function(dynamic attributes) render ;
 
   /// Function to call when a Marker is tapped
   final void Function(dynamic attributes, LatLng location) onTap;
@@ -101,7 +96,7 @@ class FeatureLayerOptions extends LayerOptions {
   FeatureLayerOptions({
     @required this.url,
     @required this.geometryType,
-    this.marker,
+
     this.size = const Size(30, 30),
     this.computeSize,
     this.anchor,
@@ -115,8 +110,7 @@ class FeatureLayerOptions extends LayerOptions {
     this.spiderfySpiralDistanceMultiplier = 1,
     this.circleSpiralSwitchover = 9,
     this.spiderfyShapePositions,
-    this.polygonOptions = const PolygonOptions(),
-    this.showPolygon = true,
     this.onTap,
+    this.render = null,
   });
 }
