@@ -1,12 +1,10 @@
 # Flutter Map plugin for ArcGIS Esri
 
-# Currently support feature layer and feature cluster
+# Currently support feature layer(point, polygon, polyline coming soon)
 We are working on more features
 
 A Dart implementation of Esri Leaflet for Flutter apps.
 This is a plugin for [flutter_map](https://github.com/johnpryan/flutter_map) package
-
-Feature layer's cluster Inspired by [flutter_map_marker_cluster](https://github.com/lpongetti/flutter_map_marker_cluster) package
 
 
 ## Usage
@@ -46,7 +44,6 @@ Add it in you FlutterMap and configure it using `FeatureLayerOptions`.
                         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
                         tileProvider: NonCachingNetworkTileProvider(),
                       ),
-  //                  MarkerLayerOptions(markers: markers),
                       FeatureLayerOptions(
                         url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Congressional_Districts/FeatureServer/0",
                         geometryType:"polygon",
