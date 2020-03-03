@@ -32,8 +32,8 @@ class _MyAppState extends State<MyApp> {
               Flexible(
                 child: FlutterMap(
                   options: MapOptions(
-                    center: LatLng(47.9187, 106.917782),
-                    zoom: 8.0,
+                    center: LatLng(40.000881, -96.2391999999999,),
+                    zoom: 10.0,
                     plugins: [EsriPlugin()],
 
                   ),
@@ -46,9 +46,10 @@ class _MyAppState extends State<MyApp> {
                     ),
 //                  MarkerLayerOptions(markers: markers),
                     FeatureLayerOptions(
-                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
+                      url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Congressional_Districts/FeatureServer/0",
+//                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
 //                      url: "https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Duureg_hil/FeatureServer/0",
-                      geometryType:"point",
+                      geometryType:"polygon",
                       marker: Marker(
                         width: 30.0,
                         height: 30.0,

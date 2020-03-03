@@ -256,55 +256,66 @@ class _FeatureLayerState extends State<FeatureLayer> {
       var URL = '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},${bounds_}}&maxRecordCountFactor=30&outFields=*&outSR=4326&resultType=tile&returnExceededLimitFeatures=false&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
 
 
+
+
       Response response = await Dio().get(URL);
 
       var features_ = <dynamic>[];
 
-      for (var feature in response.data["features"]) {
-        if (widget.options.geometryType == "point") {
-          features_.add(Marker(
-            width: widget.options.marker.width,
-            height: widget.options.marker.height,
-            point: LatLng(feature["geometry"]["y"], feature["geometry"]["x"]),
-            builder: (ctx) => Container(
-                child: GestureDetector(
-              onTap: () {
-                widget.options.onTap(feature["attributes"], LatLng(0.0, 0.0));
-              },
-              child: widget.options.marker.builder(ctx),
-            )),
-          ));
-        } else if (widget.options.geometryType == "polygon") {
-          var points = <LatLng>[];
+      String jsonsDataString = response.data.toString();
+      final jsonData = jsonDecode(jsonsDataString);
 
-          for (var point_ in feature["geometry"]["rings"][0]) {
-            points.add(LatLng(point_[1], point_[0]));
+
+      if(jsonData["features"] != null){
+        for (var feature in jsonData["features"]) {
+          if (widget.options.geometryType == "point") {
+            features_.add(Marker(
+              width: widget.options.marker.width,
+              height: widget.options.marker.height,
+              point: LatLng(feature["geometry"]["y"].toDouble(), feature["geometry"]["x"].toDouble()),
+              builder: (ctx) => Container(
+                  child: GestureDetector(
+                    onTap: () {
+                      widget.options.onTap(feature["attributes"], LatLng(0.0, 0.0));
+                    },
+                    child: widget.options.marker.builder(ctx),
+                  )),
+            ));
+          } else if (widget.options.geometryType == "polygon") {
+            var points = <LatLng>[];
+
+            for (var point_ in feature["geometry"]["rings"][0]) {
+              points.add(LatLng(point_[1].toDouble(), point_[0].toDouble()));
+            }
+
+            features_.add(PolygonEsri(
+              points: points,
+              borderStrokeWidth: widget.options.polygonOptions.borderStrokeWidth,
+              color: widget.options.polygonOptions.color,
+              borderColor: widget.options.polygonOptions.borderColor,
+              isDotted: widget.options.polygonOptions.isDotted,
+              attributes: feature["attributes"],
+            ));
           }
+        }
 
-          features_.add(PolygonEsri(
-            points: points,
-            borderStrokeWidth: widget.options.polygonOptions.borderStrokeWidth,
-            color: widget.options.polygonOptions.color,
-            borderColor: widget.options.polygonOptions.borderColor,
-            isDotted: widget.options.polygonOptions.isDotted,
-            attributes: feature["attributes"],
-          ));
+        activeRequests++;
+
+        if (activeRequests >= targetRequests) {
+          setState(() {
+            features = [...featuresPre, ...features_];
+            featuresPre = <Marker>[];
+          });
+        } else {
+          setState(() {
+            features = [...features, ...features_];
+            featuresPre = [...featuresPre, ...features_];
+          });
         }
       }
 
-      activeRequests++;
 
-      if (activeRequests >= targetRequests) {
-        setState(() {
-          features = [...featuresPre, ...features_];
-          featuresPre = <Marker>[];
-        });
-      } else {
-        setState(() {
-          features = [...features, ...features_];
-          featuresPre = [...featuresPre, ...features_];
-        });
-      }
+
     } catch (e) {
       print(e);
     }
