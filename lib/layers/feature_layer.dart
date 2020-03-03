@@ -269,9 +269,11 @@ class _FeatureLayerState extends State<FeatureLayer> {
       if(jsonData["features"] != null){
         for (var feature in jsonData["features"]) {
           if (widget.options.geometryType == "point") {
+
             features_.add(Marker(
               width: widget.options.marker.width,
               height: widget.options.marker.height,
+
               point: LatLng(feature["geometry"]["y"].toDouble(), feature["geometry"]["x"].toDouble()),
               builder: (ctx) => Container(
                   child: GestureDetector(

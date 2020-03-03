@@ -24,33 +24,71 @@ Add it in you FlutterMap and configure it using `FeatureLayerOptions`.
 
 ```dart
   Widget build(BuildContext context) {
-    return FlutterMap(
-      options: new MapOptions(
-        center: LatLng(47.9187, 106.917782),
-        zoom: 13.0,
-        plugins: [
-          EsriPlugin(),
-        ],
-      ),
-      layers: [
-        TileLayerOptions(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
-        ),
-        FeatureLayerOptions(
-          geometryType:"point",
-          url:"https://dms.ulaanbaatar.mn/arcgis/rest/services/Manaikhoroo/Hot_standart1/FeatureServer/0",
-          marker: Marker(
-             width: 30.0,
-             height: 30.0,
-             builder: (ctx) => Icon(Icons.pin_drop),
+      return MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(title: Text('ArcGIS')),
+          body: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Flexible(
+                  child: FlutterMap(
+                    options: MapOptions(
+                      center: LatLng(32.91081899999999, -92.734876),
+                      zoom: 11.0,
+                      plugins: [EsriPlugin()],
+  
+                    ),
+                    layers: [
+                      TileLayerOptions(
+                        urlTemplate:
+                        'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                        tileProvider: NonCachingNetworkTileProvider(),
+                      ),
+  //                  MarkerLayerOptions(markers: markers),
+                      FeatureLayerOptions(
+                        url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Congressional_Districts/FeatureServer/0",
+                        geometryType:"polygon",
+                        marker: Marker(
+                          width: 30.0,
+                          height: 30.0,
+                          builder: (ctx) => Icon(Icons.pin_drop),
+                        ),
+                        onTap: (attributes, LatLng location) {
+                          print(attributes);
+                        },
+                        polygonOptions: PolygonOptions(
+                            borderColor: Colors.blueAccent,
+                            color: Colors.black12,
+                            borderStrokeWidth: 2),
+                      ),
+                      FeatureLayerOptions(
+                        url: "https://services8.arcgis.com/1p2fLWyjYVpl96Ty/arcgis/rest/services/Forest_Service_Recreation_Opportunities/FeatureServer/0",
+                        geometryType:"point",
+                        marker: Marker(
+                          width: 30.0,
+                          height: 30.0,
+                          builder: (ctx) => Icon(Icons.pin_drop),
+                        ),
+                        onTap: (attributes, LatLng location) {
+                          print(attributes);
+                        },
+                        polygonOptions: PolygonOptions(
+                            borderColor: Colors.blueAccent,
+                            color: Colors.black12,
+                            borderStrokeWidth: 2),
+                      ),
+  
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          onTap: (attributes) {
-             print(attributes);
-          },
-      ],
-    );
-  }
+        ),
+      );
+    }
 ```
 
 ### Run the example
