@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map: any # or the latest version on Pub
+  flutter_map: ^0.8.2 # or the latest version on Pub
   dio: 3.0.8 #latest version
 
 
