@@ -31,18 +31,16 @@ class _FeatureLayerState extends State<FeatureLayer> {
   List<dynamic> features = <dynamic>[];
 
   StreamSubscription _moveSub;
-  StreamSubscription _onTap;
 
   var timer = Timer(Duration(milliseconds: 100), () => {});
 
   bool isMoving = false;
 
   final Map<String, Tile> _tiles = {};
-  final Map<double, Level> _levels = {};
   Tuple2<double, double> _wrapX;
   Tuple2<double, double> _wrapY;
   double _tileZoom;
-  Level _level;
+
   Bounds _globalTileRange;
   int activeRequests;
   int targetRequests;

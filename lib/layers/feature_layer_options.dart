@@ -111,6 +111,6 @@ class FeatureLayerOptions extends LayerOptions {
     this.circleSpiralSwitchover = 9,
     this.spiderfyShapePositions,
     this.onTap,
-    this.render = null,
+    this.render,
   });
 }
