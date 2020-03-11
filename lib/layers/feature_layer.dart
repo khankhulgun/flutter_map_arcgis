@@ -7,7 +7,6 @@ import 'package:latlong/latlong.dart';
 import 'feature_layer_options.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter_map/src/core/util.dart' as util;
-
 import 'package:dio/dio.dart';
 import 'dart:convert';
 
@@ -62,7 +61,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
     _moveSub?.cancel();
   }
 
-  void _handleMove2(bool data) {}
 
   void _handleMove() {
     if (isMoving) {
@@ -136,7 +134,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
   void _resetGrid() {
     var map = widget.map;
     var crs = map.options.crs;
-    var tileSize = 256.0;
     var tileZoom = _tileZoom;
 
     var bounds = map.getPixelWorldBounds(_tileZoom);
@@ -176,7 +173,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
     if (widget.options.geometryType == "point") {
       var pixelBounds = _getTiledPixelBounds(widget.map.center);
       var tileRange = _pxBoundsToTileRange(pixelBounds);
-      var tileCenter = tileRange.getCenter();
+
       var queue = <Coords>[];
 
       // mark tiles as out of view...
