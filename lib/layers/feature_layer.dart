@@ -6,7 +6,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 import 'feature_layer_options.dart';
 import 'package:tuple/tuple.dart';
-import 'package:flutter_map/src/core/util.dart' as util;
+import 'package:flutter_map_arcgis/utils/util.dart' as util;
 import 'package:dio/dio.dart';
 import 'dart:convert';
 
@@ -200,9 +200,9 @@ class _FeatureLayerState extends State<FeatureLayer> {
         targetRequests = queue.length;
         activeRequests = 0;
         for (var i = 0; i < queue.length; i++) {
-          var coords_new = _wrapCoords(queue[i]);
+          var coordsNew = _wrapCoords(queue[i]);
 
-          var Bounds = _CoordsToBounds(coords_new);
+          var Bounds = _CoordsToBounds(coordsNew);
           requestFeatures(Bounds);
         }
       }
@@ -223,9 +223,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
     return LatLngBounds(nw, se);
   }
 
-  String _tileCoordsToKey(Coords coords) {
-    return '${coords.x}:${coords.y}:${coords.z}';
-  }
 
   bool _isValidTile(Coords coords) {
     var crs = widget.map.options.crs;

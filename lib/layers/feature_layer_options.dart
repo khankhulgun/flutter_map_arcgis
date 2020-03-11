@@ -41,8 +41,6 @@ typedef ClusterWidgetBuilder = Widget Function(
     BuildContext context, List<Marker> markers);
 
 class FeatureLayerOptions extends LayerOptions {
-
-
   /// Cluster size
   final Size size;
 
@@ -86,9 +84,8 @@ class FeatureLayerOptions extends LayerOptions {
   /// Make it possible to provide custom function to calculate spiderfy shape positions
   final List<Point> Function(int, Point) spiderfyShapePositions;
 
-
   /// Render
-  final dynamic Function(dynamic attributes) render ;
+  final dynamic Function(dynamic attributes) render;
 
   /// Function to call when a Marker is tapped
   final void Function(dynamic attributes, LatLng location) onTap;
@@ -96,14 +93,13 @@ class FeatureLayerOptions extends LayerOptions {
   FeatureLayerOptions({
     @required this.url,
     @required this.geometryType,
-
     this.size = const Size(30, 30),
     this.computeSize,
     this.anchor,
     this.maxClusterRadius = 80,
     this.animationsOptions = const AnimationsOptions(),
     this.fitBoundsOptions =
-    const FitBoundsOptions(padding: EdgeInsets.all(12.0)),
+        const FitBoundsOptions(padding: EdgeInsets.all(12.0)),
     this.zoomToBoundsOnClick = true,
     this.centerMarkerOnClick = true,
     this.spiderfyCircleRadius = 40,
