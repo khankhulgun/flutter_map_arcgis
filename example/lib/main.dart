@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
                 child: FlutterMap(
                   options: MapOptions(
                     center: LatLng(32.91081899999999, -92.734876),
-                    zoom: 11.0,
+                    zoom: 9.0,
                     plugins: [EsriPlugin()],
 
                   ),

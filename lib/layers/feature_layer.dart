@@ -41,6 +41,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
   double _tileZoom;
 
   Bounds _globalTileRange;
+  LatLngBounds currentBounds;
   int activeRequests;
   int targetRequests;
 
@@ -74,9 +75,19 @@ class _FeatureLayerState extends State<FeatureLayer> {
   }
 
   void _resetView() {
+    LatLngBounds mapBounds = widget.map.getBounds();
+    if(currentBounds == null){
+      doResetView(mapBounds);
+    } else {
+      if(currentBounds.southEast != mapBounds.southEast || currentBounds.southWest != mapBounds.southWest || currentBounds.northEast != mapBounds.northEast || currentBounds.northWest != mapBounds.northWest){
+        doResetView(mapBounds);
+      }
+    }
+  }
+  void doResetView(LatLngBounds mapBounds){
     setState(() {
       featuresPre = <dynamic>[];
-//      features = null;
+      currentBounds = mapBounds;
     });
     _setView(widget.map.center, widget.map.zoom);
     _resetGrid();
@@ -254,8 +265,10 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
       var features_ = <dynamic>[];
 
-      String jsonsDataString = response.data.toString();
-      final jsonData = jsonDecode(jsonsDataString);
+      var jsonData = response.data;
+      if(jsonData is String){
+        jsonData = jsonDecode(jsonData);
+      }
 
 
       if(jsonData["features"] != null){
