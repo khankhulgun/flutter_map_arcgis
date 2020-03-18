@@ -55,13 +55,11 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
   @override
   void dispose() {
-
     super.dispose();
     featuresPre = <dynamic>[];
     features = <dynamic>[];
     _moveSub?.cancel();
   }
-
 
   void _handleMove() {
     if (isMoving) {
@@ -76,15 +74,19 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
   void _resetView() {
     LatLngBounds mapBounds = widget.map.getBounds();
-    if(currentBounds == null){
+    if (currentBounds == null) {
       doResetView(mapBounds);
     } else {
-      if(currentBounds.southEast != mapBounds.southEast || currentBounds.southWest != mapBounds.southWest || currentBounds.northEast != mapBounds.northEast || currentBounds.northWest != mapBounds.northWest){
+      if (currentBounds.southEast != mapBounds.southEast ||
+          currentBounds.southWest != mapBounds.southWest ||
+          currentBounds.northEast != mapBounds.northEast ||
+          currentBounds.northWest != mapBounds.northWest) {
         doResetView(mapBounds);
       }
     }
   }
-  void doResetView(LatLngBounds mapBounds){
+
+  void doResetView(LatLngBounds mapBounds) {
     setState(() {
       featuresPre = <dynamic>[];
       currentBounds = mapBounds;
@@ -234,7 +236,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
     return LatLngBounds(nw, se);
   }
 
-
   bool _isValidTile(Coords coords) {
     var crs = widget.map.options.crs;
     if (!crs.infinite) {
@@ -256,78 +257,60 @@ class _FeatureLayerState extends State<FeatureLayer> {
       var bounds_ =
           '"xmin":${bounds.southWest.longitude},"ymin":${bounds.southWest.latitude},"xmax":${bounds.northEast.longitude},"ymax":${bounds.northEast.latitude}';
 
-      var URL = '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},${bounds_}}&maxRecordCountFactor=30&outFields=*&outSR=4326&resultType=tile&returnExceededLimitFeatures=false&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
-
-
-
+      var URL =
+          '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},${bounds_}}&maxRecordCountFactor=30&outFields=*&outSR=4326&resultType=tile&returnExceededLimitFeatures=false&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
 
       Response response = await Dio().get(URL);
 
       var features_ = <dynamic>[];
 
       var jsonData = response.data;
-      if(jsonData is String){
+      if (jsonData is String) {
         jsonData = jsonDecode(jsonData);
       }
 
-
-      if(jsonData["features"] != null){
+      if (jsonData["features"] != null) {
         for (var feature in jsonData["features"]) {
           if (widget.options.geometryType == "point") {
-
             var render = widget.options.render(feature["attributes"]);
 
-            if(render == null){
-              render = Marker(
-                width: 30.0,
-                height: 30.0,
-                builder: (ctx) => Icon(Icons.pin_drop),
-              );
+            if (render != null) {
+              features_.add(Marker(
+                width: render.width,
+                height: render.height,
+                point: LatLng(feature["geometry"]["y"].toDouble(),
+                    feature["geometry"]["x"].toDouble()),
+                builder: (ctx) => Container(
+                    child: GestureDetector(
+                  onTap: () {
+                    widget.options
+                        .onTap(feature["attributes"], LatLng(0.0, 0.0));
+                  },
+                  child: render.builder(ctx),
+                )),
+              ));
             }
-            features_.add(Marker(
-              width: render.width,
-              height: render.height,
-
-              point: LatLng(feature["geometry"]["y"].toDouble(), feature["geometry"]["x"].toDouble()),
-              builder: (ctx) => Container(
-                  child: GestureDetector(
-                    onTap: () {
-                      widget.options.onTap(feature["attributes"], LatLng(0.0, 0.0));
-                    },
-                    child: render.builder(ctx),
-                  )),
-            ));
           } else if (widget.options.geometryType == "polygon") {
-
-
-
             for (var ring in feature["geometry"]["rings"]) {
-                  var points = <LatLng>[];
+              var points = <LatLng>[];
 
-                  for (var point_ in ring) {
-                    points.add(LatLng(point_[1].toDouble(), point_[0].toDouble()));
-                  }
+              for (var point_ in ring) {
+                points.add(LatLng(point_[1].toDouble(), point_[0].toDouble()));
+              }
 
-                  var render = widget.options.render(feature["attributes"]);
+              var render = widget.options.render(feature["attributes"]);
 
-                  if(render == null){
-                    render = PolygonOptions(
-                        borderColor: Colors.blueAccent,
-                        color: Colors.black12,
-                        borderStrokeWidth: 2
-                    );
-                  }
-
-                  features_.add(PolygonEsri(
-                    points: points,
-                    borderStrokeWidth: render.borderStrokeWidth,
-                    color: render.color,
-                    borderColor: render.borderColor,
-                    isDotted: render.isDotted,
-                    attributes: feature["attributes"],
-                  ));
+              if (render != null) {
+                features_.add(PolygonEsri(
+                  points: points,
+                  borderStrokeWidth: render.borderStrokeWidth,
+                  color: render.color,
+                  borderColor: render.borderColor,
+                  isDotted: render.isDotted,
+                  attributes: feature["attributes"],
+                ));
+              }
             }
-
           }
         }
 
@@ -345,20 +328,15 @@ class _FeatureLayerState extends State<FeatureLayer> {
           });
         }
       }
-
-
-
     } catch (e) {
       print(e);
     }
   }
 
   void findTapedPolygon(LatLng position) {
-
     for (var polygon in features) {
       var isInclude = _pointInPolygon(position, polygon.points);
       if (isInclude) {
-
         widget.options.onTap(polygon.attributes, position);
       } else {
         widget.options.onTap(null, position);
@@ -387,7 +365,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
   @override
   Widget build(BuildContext context) {
-
     if (widget.options.geometryType == "point") {
       return _buildMarkers(context);
     } else {
