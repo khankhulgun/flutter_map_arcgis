@@ -275,16 +275,16 @@ class _FeatureLayerState extends State<FeatureLayer> {
             var render = widget.options.render(feature["attributes"]);
 
             if (render != null) {
+              var latLng = LatLng(feature["geometry"]["y"].toDouble(),
+                  feature["geometry"]["x"].toDouble());
               features_.add(Marker(
                 width: render.width,
                 height: render.height,
-                point: LatLng(feature["geometry"]["y"].toDouble(),
-                    feature["geometry"]["x"].toDouble()),
+                point: latLng,
                 builder: (ctx) => Container(
                     child: GestureDetector(
                   onTap: () {
-                    widget.options
-                        .onTap(feature["attributes"], LatLng(0.0, 0.0));
+                    widget.options.onTap(feature["attributes"], latLng);
                   },
                   child: render.builder(ctx),
                 )),
