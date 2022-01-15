@@ -284,7 +284,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
                 builder: (ctx) => Container(
                     child: GestureDetector(
                   onTap: () {
-                    widget.options.onTap(feature["attributes"], latLng);
+                    widget.options.onTap!(feature["attributes"], latLng);
                   },
                   child: render.builder(ctx),
                 )),
