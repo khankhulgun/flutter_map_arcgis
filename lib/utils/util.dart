@@ -16,7 +16,7 @@ String template(String str, Map<String, String> data) {
   });
 }
 
-double wrapNum(double x, Tuple2<double, double> range, [bool includeMax]) {
+double wrapNum(double x, Tuple2<double, double> range, [bool? includeMax]) {
   var max = range.item2;
   var min = range.item1;
   var d = max - min;

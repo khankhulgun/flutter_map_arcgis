@@ -6,8 +6,8 @@ import 'layers/feature_layer_options.dart';
 class EsriPlugin extends MapPlugin {
   @override
   Widget createLayer(
-      LayerOptions options, MapState mapState, Stream<void> stream) {
-    return FeatureLayer(options, mapState, stream);
+    LayerOptions options, MapState mapState, Stream<Null> stream) {
+    return FeatureLayer(options as FeatureLayerOptions, mapState, stream);
   }
 
   @override

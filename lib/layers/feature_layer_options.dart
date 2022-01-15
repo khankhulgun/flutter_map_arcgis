@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 
 class PolygonOptions {
   final Color color;
@@ -45,10 +45,10 @@ class FeatureLayerOptions extends LayerOptions {
   final Size size;
 
   /// Cluster compute size
-  final Size Function(List<Marker>) computeSize;
+  final Size Function(List<Marker>)? computeSize;
 
   /// Cluster anchor
-  final AnchorPos anchor;
+  final AnchorPos? anchor;
 
   /// A cluster will cover at most this many pixels from its center
   final int maxClusterRadius;
@@ -82,17 +82,17 @@ class FeatureLayerOptions extends LayerOptions {
   final int circleSpiralSwitchover;
 
   /// Make it possible to provide custom function to calculate spiderfy shape positions
-  final List<Point> Function(int, Point) spiderfyShapePositions;
+  final List<Point> Function(int, Point)? spiderfyShapePositions;
 
   /// Render
-  final dynamic Function(dynamic attributes) render;
+  final dynamic Function(dynamic attributes)? render;
 
   /// Function to call when a Marker is tapped
-  final void Function(dynamic attributes, LatLng location) onTap;
+  final void Function(dynamic attributes, LatLng location)? onTap;
 
-  FeatureLayerOptions({
-    @required this.url,
-    @required this.geometryType,
+  FeatureLayerOptions(
+      this.url,
+      this.geometryType,{
     this.size = const Size(30, 30),
     this.computeSize,
     this.anchor,

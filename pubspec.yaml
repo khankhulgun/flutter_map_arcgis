@@ -1,17 +1,17 @@
 name: flutter_map_arcgis
 description: Arcgis plugin for flutter map. Features Support unique render, ontap event, ontap with atttributes, geometry types (point, polgyon)
-version: 0.1.5
-author: Khan Khulgun Team
+version: 0.1.6
+author: Khan Khulgun Team, Munkh-Altai
 homepage: https://github.com/munkh-altai/flutter_map_arcgis
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: ">=2.15.1 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map: ^0.8.2 # or the latest version on Pub
-  dio: 3.0.9 #latest version
+  flutter_map: ^0.14.0
+  dio: ^4.0.0
 
 
 dev_dependencies:
