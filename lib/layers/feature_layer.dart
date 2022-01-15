@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:collection/collection.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,10 +8,7 @@ import 'package:tuple/tuple.dart';
 import 'package:flutter_map_arcgis/utils/util.dart' as util;
 import 'package:dio/dio.dart';
 import 'dart:convert';
-
 import 'dart:async';
-
-//import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
 class FeatureLayer extends StatefulWidget {
   final FeatureLayerOptions options;
@@ -217,8 +213,8 @@ class _FeatureLayerState extends State<FeatureLayer> {
         for (var i = 0; i < queue.length; i++) {
           var coordsNew = _wrapCoords(queue[i]);
 
-          var Bounds = _CoordsToBounds(coordsNew);
-          requestFeatures(Bounds);
+          var bounds = coordsToBounds(coordsNew);
+          requestFeatures(bounds);
         }
       }
     } else {
@@ -228,7 +224,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
     }
   }
 
-  LatLngBounds _CoordsToBounds(Coords coords) {
+  LatLngBounds coordsToBounds(Coords coords) {
     var map = widget.map;
     var cellSize = 256.0;
     var nwPoint = coords.multiplyBy(cellSize);
@@ -258,9 +254,9 @@ class _FeatureLayerState extends State<FeatureLayer> {
     try {
       String bounds_ = '"xmin":${bounds.southWest!.longitude},"ymin":${bounds.southWest!.latitude},"xmax":${bounds.northEast!.longitude},"ymax":${bounds.northEast?.latitude}';
 
-      String URL = '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},${bounds_}}&maxRecordCountFactor=30&outFields=*&outSR=4326&resultType=tile&returnExceededLimitFeatures=false&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
+      String url = '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},$bounds_}&maxRecordCountFactor=30&outFields=*&outSR=4326&resultType=tile&returnExceededLimitFeatures=false&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
 
-      Response response = await Dio().get(URL);
+      Response response = await Dio().get(url);
 
       var features_ = <dynamic>[];
 
@@ -493,7 +489,7 @@ class PolygonEsri extends Polygon {
   final double borderStrokeWidth;
   final Color borderColor;
   final bool isDotted;
-  final dynamic? attributes;
+  final dynamic attributes;
   late final LatLngBounds boundingBox;
 
   PolygonEsri({
