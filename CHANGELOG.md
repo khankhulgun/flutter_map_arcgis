@@ -1,3 +1,7 @@
+## 2.0.3
+
+- exceededTransferLimit set to true ArcGIS rest API
+
 ## 2.0.2
 
 - Point request caller improved
