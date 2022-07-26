@@ -3,10 +3,9 @@ import 'package:flutter_map/plugin_api.dart';
 import 'layers/feature_layer.dart';
 import 'layers/feature_layer_options.dart';
 
-class EsriPlugin extends MapPlugin {
+class EsriPlugin implements MapPlugin {
   @override
-  Widget createLayer(
-    LayerOptions options, MapState mapState, Stream<Null> stream) {
+  Widget createLayer(LayerOptions options, MapState mapState, stream) {
     return FeatureLayer(options as FeatureLayerOptions, mapState, stream);
   }
 

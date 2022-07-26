@@ -3,8 +3,6 @@ import 'package:flutter_map_arcgis/flutter_map_arcgis.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-
-
 void main() => runApp(MyApp());
 
 class MyApp extends StatefulWidget {
@@ -13,7 +11,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
 
   @override
   void initState() {
@@ -59,22 +56,36 @@ class _MyAppState extends State<MyApp> {
                       },
 
                     ),
-                    // FeatureLayerOptions(
-                      // "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0",
-                    //   "point",
-                    //   render:(dynamic attributes){
-                    //     // You can render by attribute
-                    //     return Marker(
-                    //       width: 30.0,
-                    //       height: 30.0,
-                    //       builder: (ctx) => Icon(Icons.pin_drop),
-                    //       point: LatLng(40, 40)
-                    //     );
-                    //   },
-                    //   onTap: (attributes, LatLng location) {
-                    //     print(attributes);
-                    //   },
-                    // ),
+                    FeatureLayerOptions(
+                      "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0",
+                      "point",
+                      render:(dynamic attributes){
+                        // You can render by attribute
+                        return PointOptions(
+                          width: 30.0,
+                          height: 30.0,
+                          builder: const Icon(Icons.pin_drop),
+                        );
+                      },
+                      onTap: (attributes, LatLng location) {
+                        print(attributes);
+                      },
+                    ),
+                    FeatureLayerOptions(
+                      "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Denver_Streets_Centerline/FeatureServer/0",
+                      "polyline",
+                      render:(dynamic attributes){
+                        // You can render by attribute
+                        return PolygonLineOptions(
+                            borderColor: Colors.red,
+                            color: Colors.red,
+                            borderStrokeWidth: 2
+                        );
+                      },
+                      onTap: (attributes, LatLng location) {
+                        print(attributes);
+                      },
+                    ),
 
                   ],
                 ),

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
-
 class PolygonOptions {
   final Color color;
   final double borderStrokeWidth;
@@ -15,6 +14,30 @@ class PolygonOptions {
     this.borderStrokeWidth = 0.0,
     this.borderColor = const Color(0xFFFFFF00),
     this.isDotted = false,
+  });
+}
+class PolygonLineOptions {
+  final Color color;
+  final double borderStrokeWidth;
+  final Color borderColor;
+  final bool isDotted;
+
+  const PolygonLineOptions({
+    this.color = const Color(0xFF00FF00),
+    this.borderStrokeWidth = 0.0,
+    this.borderColor = const Color(0xFFFFFF00),
+    this.isDotted = false,
+  });
+}
+
+class PointOptions {
+  final double width;
+  final double height;
+  final Widget builder;
+  const PointOptions({
+    this.width = 30.0,
+    this.height = 30.0,
+    this.builder = const Icon(Icons.pin_drop),
   });
 }
 
