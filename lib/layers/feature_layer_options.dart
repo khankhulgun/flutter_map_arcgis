@@ -8,12 +8,14 @@ class PolygonOptions {
   final double borderStrokeWidth;
   final Color borderColor;
   final bool isDotted;
+  final bool isFilled;
 
   const PolygonOptions({
     this.color = const Color(0xFF00FF00),
     this.borderStrokeWidth = 0.0,
     this.borderColor = const Color(0xFFFFFF00),
     this.isDotted = false,
+    this.isFilled = false,
   });
 }
 class PolygonLineOptions {

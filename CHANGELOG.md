@@ -1,3 +1,7 @@
+## 2.0.4
+
+- isFilled option added to polygon
+
 ## 2.0.3
 
 - exceededTransferLimit set to true ArcGIS rest API

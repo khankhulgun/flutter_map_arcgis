@@ -308,6 +308,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
               var render = widget.options.render!(feature["attributes"]);
 
+
               if (render != null) {
                 features_.add(PolygonEsri(
                   points: points,
@@ -315,6 +316,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
                   color: render.color,
                   borderColor: render.borderColor,
                   isDotted: render.isDotted,
+                  isFilled: render.isFilled,
                   attributes: feature["attributes"],
                 ));
               }
@@ -599,6 +601,7 @@ class PolygonEsri extends Polygon {
   final double borderStrokeWidth;
   final Color borderColor;
   final bool isDotted;
+  final bool isFilled;
   final dynamic attributes;
   late final LatLngBounds boundingBox;
 
@@ -608,6 +611,7 @@ class PolygonEsri extends Polygon {
     this.borderStrokeWidth = 0.0,
     this.borderColor = const Color(0xFFFFFF00),
     this.isDotted = false,
+    this.isFilled = false,
     this.attributes,
   }) : super(points: points) {
     boundingBox = LatLngBounds.fromPoints(points);
