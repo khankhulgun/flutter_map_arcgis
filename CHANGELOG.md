@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Polyline added, Flutter map version 2.1.1
+
 ## 2.0.0
 
 - Stable null safety release.
