@@ -1,3 +1,7 @@
+## 2.0.2
+
+- Point request caller improved
+
 ## 2.0.1
 
 - Polyline added, Flutter map version 2.1.1

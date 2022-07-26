@@ -45,7 +45,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
   initState() {
     super.initState();
     _resetView();
-    //requestFeatures(widget.map.getBounds());
     _moveSub = widget.stream.listen((_) => _handleMove());
   }
 
@@ -58,6 +57,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
   }
 
   void _handleMove() {
+
     setState(() {
       if (isMoving) {
         timer.cancel();
@@ -71,28 +71,28 @@ class _FeatureLayerState extends State<FeatureLayer> {
     });
   }
 
-  void _resetView() {
+  void _resetView() async{
     LatLngBounds mapBounds = widget.map.getBounds();
     if (currentBounds == null) {
-      doResetView(mapBounds);
+      await doResetView(mapBounds);
     } else {
       if (currentBounds!.southEast != mapBounds.southEast ||
           currentBounds!.southWest != mapBounds.southWest ||
           currentBounds!.northEast != mapBounds.northEast ||
           currentBounds!.northWest != mapBounds.northWest) {
-        doResetView(mapBounds);
+        await doResetView(mapBounds);
       }
     }
   }
 
-  void doResetView(LatLngBounds mapBounds) {
+  Future doResetView(LatLngBounds mapBounds) async {
     setState(() {
       featuresPre = <dynamic>[];
       currentBounds = mapBounds;
     });
     _setView(widget.map.center, widget.map.zoom);
     _resetGrid();
-    genrateVirtualGrids();
+   await genrateVirtualGrids();
   }
 
   void _setView(LatLng center, double zoom) {
@@ -181,47 +181,55 @@ class _FeatureLayerState extends State<FeatureLayer> {
     }
   }
 
-  void genrateVirtualGrids() {
+  Future genrateVirtualGrids() async{
     if (widget.options.geometryType == "point") {
-      var pixelBounds = _getTiledPixelBounds(widget.map.center);
-      var tileRange = _pxBoundsToTileRange(pixelBounds);
 
-      var queue = <Coords>[];
+     if(_tileZoom! <= 14){
+       var pixelBounds = _getTiledPixelBounds(widget.map.center);
+       var tileRange = _pxBoundsToTileRange(pixelBounds);
 
-      // mark tiles as out of view...
-      for (var key in _tiles.keys) {
-        var c = _tiles[key]!.coords;
-        if (c.z != _tileZoom) {
-          _tiles[key]!.current = false;
-        }
-      }
+       var queue = <Coords>[];
 
-      for (var j = tileRange.min.y; j <= tileRange.max.y; j++) {
-        for (var i = tileRange.min.x; i <= tileRange.max.x; i++) {
-          var coords = Coords(i.toDouble(), j.toDouble());
-          coords.z = _tileZoom!;
+       // mark tiles as out of view...
+       for (var key in _tiles.keys) {
+         var c = _tiles[key]!.coords;
+         if (c.z != _tileZoom) {
+           _tiles[key]!.current = false;
+         }
+       }
 
-          if (!_isValidTile(coords)) {
-            continue;
-          }
-          // Add all valid tiles to the queue on Flutter
-          queue.add(coords);
-        }
-      }
-      if (queue.isNotEmpty) {
-        targetRequests = queue.length;
-        activeRequests = 0;
-        for (var i = 0; i < queue.length; i++) {
-          var coordsNew = _wrapCoords(queue[i]);
+       for (var j = tileRange.min.y; j <= tileRange.max.y; j++) {
+         for (var i = tileRange.min.x; i <= tileRange.max.x; i++) {
+           var coords = Coords(i.toDouble(), j.toDouble());
+           coords.z = _tileZoom!;
 
-          var bounds = coordsToBounds(coordsNew);
-          requestFeatures(bounds);
-        }
-      }
+           if (!_isValidTile(coords)) {
+             continue;
+           }
+           // Add all valid tiles to the queue on Flutter
+           queue.add(coords);
+         }
+       }
+       if (queue.isNotEmpty) {
+         targetRequests = queue.length;
+         activeRequests = 0;
+         for (var i = 0; i < queue.length; i++) {
+           var coordsNew = _wrapCoords(queue[i]);
+
+           var bounds = coordsToBounds(coordsNew);
+           await requestFeatures(bounds);
+         }
+       }
+     } else {
+       targetRequests = 1;
+       activeRequests = 1;
+       await  requestFeatures(widget.map.getBounds());
+     }
+
     } else {
       targetRequests = 1;
       activeRequests = 1;
-      requestFeatures(widget.map.getBounds());
+      await  requestFeatures(widget.map.getBounds());
     }
   }
 
@@ -251,7 +259,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
   void getMapState() {}
 
-  void requestFeatures(LatLngBounds bounds) async {
+  Future requestFeatures(LatLngBounds bounds) async {
     try {
       String bounds_ =
           '"xmin":${bounds.southWest!.longitude},"ymin":${bounds.southWest!.latitude},"xmax":${bounds.northEast!.longitude},"ymax":${bounds.northEast?.latitude}';
