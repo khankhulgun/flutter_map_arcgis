@@ -4,17 +4,17 @@ version: 2.0.4
 homepage: https://github.com/khankhulgun/flutter_map_arcgis
 
 environment:
-  sdk: ">=2.15.1 <3.0.0"
-  flutter: '>=2.5.0'
+  sdk: ">=2.15.1 <4.0.0"
+  flutter: '>=3.1.5'
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map: ^2.1.1
-  dio: ^4.0.6
-  latlong2: ^0.8.1
+  flutter_map: ^6.0.1
+  dio: ^5.3.3
+  latlong2: ^0.9.0
   collection: ^1.16.0
-  tuple: ^2.0.0
+  tuple: ^2.0.1
 
 
 dev_dependencies:
