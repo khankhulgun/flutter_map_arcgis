@@ -1,3 +1,11 @@
+## 2.0.6
+
+- Flutter map version up. support 6.1.0
+
+## 2.0.5
+
+- Flutter map version up
+
 ## 2.0.4
 
 - isFilled option added to polygon

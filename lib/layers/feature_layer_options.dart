@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong2/latlong.dart';
 class PolygonOptions {
   final Color color;
@@ -36,9 +35,11 @@ class PointOptions {
   final double width;
   final double height;
   final Widget builder;
+  final Alignment? alignment;
   const PointOptions({
     this.width = 30.0,
     this.height = 30.0,
+    this.alignment,
     this.builder = const Icon(Icons.pin_drop),
   });
 }
@@ -64,7 +65,7 @@ class AnimationsOptions {
 typedef ClusterWidgetBuilder = Widget Function(
     BuildContext context, List<Marker> markers);
 
-class FeatureLayerOptions extends LayerOptions {
+class FeatureLayerOptions  {
   /// Cluster size
   final Size size;
 
@@ -72,7 +73,7 @@ class FeatureLayerOptions extends LayerOptions {
   final Size Function(List<Marker>)? computeSize;
 
   /// Cluster anchor
-  final AnchorPos? anchor;
+  final Alignment? alignment;
 
   /// A cluster will cover at most this many pixels from its center
   final int maxClusterRadius;
@@ -119,7 +120,7 @@ class FeatureLayerOptions extends LayerOptions {
       this.geometryType,{
     this.size = const Size(30, 30),
     this.computeSize,
-    this.anchor,
+    this.alignment,
     this.maxClusterRadius = 80,
     this.animationsOptions = const AnimationsOptions(),
     this.fitBoundsOptions =

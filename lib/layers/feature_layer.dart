@@ -1,27 +1,45 @@
 import 'dart:math';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:collection/collection.dart';
 import 'package:latlong2/latlong.dart';
 import 'feature_layer_options.dart';
 import 'package:tuple/tuple.dart';
-import 'package:flutter_map_arcgis/utils/util.dart' as util;
 import 'package:dio/dio.dart';
 import 'dart:convert';
+import 'package:flutter_map/src/layer/tile_layer/tile_image_manager.dart';
 import 'dart:async';
+import 'package:flutter_map/src/layer/tile_layer/tile_range.dart';
+import 'package:flutter_map/src/layer/tile_layer/tile_bounds/tile_bounds.dart';
+import 'package:flutter_map/src/layer/tile_layer/tile_range_calculator.dart';
+import 'package:flutter_map/src/layer/tile_layer/tile_scale_calculator.dart';
+import 'package:flutter_map/src/layer/tile_layer/tile_update_event.dart';
 
+@immutable
 class FeatureLayer extends StatefulWidget {
   final FeatureLayerOptions options;
-  final MapState map;
-  final Stream stream;
+  final Stream<void>? reset;
 
-  FeatureLayer(this.options, this.map, this.stream);
+  /// Only load tiles that are within these bounds
+  final LatLngBounds? tileBounds;
+  final TileUpdateTransformer tileUpdateTransformer;
+
+  FeatureLayer(
+    this.options, {
+    super.key,
+    this.reset,
+    this.tileBounds,
+    TileUpdateTransformer? tileUpdateTransformer,
+  }) : tileUpdateTransformer =
+            tileUpdateTransformer ?? TileUpdateTransformers.ignoreTapEvents {}
 
   @override
   State<StatefulWidget> createState() => _FeatureLayerState();
 }
 
-class _FeatureLayerState extends State<FeatureLayer> {
+class _FeatureLayerState extends State<FeatureLayer>
+    with TickerProviderStateMixin {
+  bool _initializedFromMapCamera = false;
   List<dynamic> featuresPre = <dynamic>[];
   List<dynamic> features = <dynamic>[];
 
@@ -31,7 +49,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
   bool isMoving = false;
 
-  final Map<String, Tile> _tiles = {};
   Tuple2<double, double>? _wrapX;
   Tuple2<double, double>? _wrapY;
   double? _tileZoom;
@@ -41,23 +58,127 @@ class _FeatureLayerState extends State<FeatureLayer> {
   int activeRequests = 0;
   int targetRequests = 0;
 
+  final _tileImageManager = TileImageManager();
+  late TileBounds _tileBounds;
+  late var _tileRangeCalculator = TileRangeCalculator(tileSize: 256);
+  late TileScaleCalculator _tileScaleCalculator;
+
+  // We have to hold on to the mapController hashCode to determine whether we
+  // need to reinitialize the listeners. didChangeDependencies is called on
+  // every map movement and if we unsubscribe and resubscribe every time we
+  // miss events.
+  int? _mapControllerHashCode;
+
+  StreamSubscription<TileUpdateEvent>? _tileUpdateSubscription;
+  Timer? _pruneLater;
+
+  late final _resetSub = widget.reset?.listen((_) {
+    _tileImageManager.removeAll(EvictErrorTileStrategy.none);
+    _loadAndPruneInVisibleBounds(MapCamera.of(context));
+  });
+
+  // This is called on every map movement so we should avoid expensive logic
+  // where possible.
   @override
-  initState() {
-    super.initState();
-    _resetView();
-    _moveSub = widget.stream.listen((_) => _handleMove());
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final camera = MapCamera.of(context);
+    final mapController = MapController.of(context);
+
+    if (_mapControllerHashCode != mapController.hashCode) {
+      _tileUpdateSubscription?.cancel();
+
+      _mapControllerHashCode = mapController.hashCode;
+      _tileUpdateSubscription = mapController.mapEventStream
+          .map((mapEvent) => TileUpdateEvent(mapEvent: mapEvent))
+          .transform(widget.tileUpdateTransformer)
+          .listen((event) => _onTileUpdateEvent(event));
+    }
+
+    var reloadTiles = false;
+    if (!_initializedFromMapCamera ||
+        _tileBounds.shouldReplace(camera.crs, 256, widget.tileBounds)) {
+      reloadTiles = true;
+      _tileBounds = TileBounds(
+        crs: camera.crs,
+        tileSize: 256,
+        latLngBounds: widget.tileBounds,
+      );
+    }
+
+    if (!_initializedFromMapCamera ||
+        _tileScaleCalculator.shouldReplace(camera.crs, 256)) {
+      reloadTiles = true;
+      _tileScaleCalculator = TileScaleCalculator(
+        crs: camera.crs,
+        tileSize: 256,
+      );
+    }
+
+    if (reloadTiles) _loadAndPruneInVisibleBounds(camera);
+
+    _initializedFromMapCamera = true;
   }
 
+  int _clampToNativeZoom(double zoom) => zoom.round().clamp(0, 19);
+
   @override
-  void dispose() {
-    super.dispose();
-    featuresPre = <dynamic>[];
-    features = <dynamic>[];
-    _moveSub?.cancel();
+  void didUpdateWidget(FeatureLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    var reloadTiles = false;
+
+    // There is no caching in TileRangeCalculator so we can just replace it.
+    _tileRangeCalculator = TileRangeCalculator(tileSize: 256);
+
+    if (_tileBounds.shouldReplace(_tileBounds.crs, 256, widget.tileBounds)) {
+      _tileBounds = TileBounds(
+        crs: _tileBounds.crs,
+        tileSize: 256,
+        latLngBounds: widget.tileBounds,
+      );
+      reloadTiles = true;
+    }
+
+    if (_tileScaleCalculator.shouldReplace(_tileScaleCalculator.crs, 256)) {
+      _tileScaleCalculator = TileScaleCalculator(
+        crs: _tileScaleCalculator.crs,
+        tileSize: 256,
+      );
+    }
+
+    if (reloadTiles) {
+      _tileImageManager.removeAll(EvictErrorTileStrategy.none);
+      _loadAndPruneInVisibleBounds(MapCamera.maybeOf(context)!);
+    }
   }
 
-  void _handleMove() {
+  void _onTileUpdateEvent(TileUpdateEvent event) {
+    final tileZoom = _clampToNativeZoom(event.zoom);
+    final visibleTileRange = _tileRangeCalculator.calculate(
+      camera: event.camera,
+      tileZoom: tileZoom,
+      center: event.center,
+      viewingZoom: event.zoom,
+    );
 
+    if (event.load) {
+      _loadTiles(visibleTileRange, pruneAfterLoad: event.prune);
+    }
+
+    if (event.prune) {
+      _tileImageManager.evictAndPrune(
+        visibleRange: visibleTileRange,
+        pruneBuffer: 1 + 2,
+        evictStrategy: EvictErrorTileStrategy.none,
+      );
+    }
+  }
+
+  void _loadTiles(
+    DiscreteTileRange tileLoadRange, {
+    required bool pruneAfterLoad,
+  }) async {
     setState(() {
       if (isMoving) {
         timer.cancel();
@@ -66,40 +187,15 @@ class _FeatureLayerState extends State<FeatureLayer> {
       isMoving = true;
       timer = Timer(Duration(milliseconds: 200), () {
         isMoving = false;
-        _resetView();
+        if (pruneAfterLoad) {
+          final map = MapCamera.of(context);
+
+          targetRequests = 1;
+          activeRequests = 1;
+          requestFeatures(map.visibleBounds);
+        }
       });
     });
-  }
-
-  void _resetView() async{
-    LatLngBounds mapBounds = widget.map.getBounds();
-    if (currentBounds == null) {
-      await doResetView(mapBounds);
-    } else {
-      if (currentBounds!.southEast != mapBounds.southEast ||
-          currentBounds!.southWest != mapBounds.southWest ||
-          currentBounds!.northEast != mapBounds.northEast ||
-          currentBounds!.northWest != mapBounds.northWest) {
-        await doResetView(mapBounds);
-      }
-    }
-  }
-
-  Future doResetView(LatLngBounds mapBounds) async {
-    setState(() {
-      featuresPre = <dynamic>[];
-      currentBounds = mapBounds;
-    });
-    _setView(widget.map.center, widget.map.zoom);
-    _resetGrid();
-   await genrateVirtualGrids();
-  }
-
-  void _setView(LatLng center, double zoom) {
-    var tileZoom = _clampZoom(zoom.round().toDouble());
-    if (_tileZoom != tileZoom) {
-      _tileZoom = tileZoom;
-    }
   }
 
   Bounds _pxBoundsToTileRange(Bounds bounds) {
@@ -115,149 +211,21 @@ class _FeatureLayerState extends State<FeatureLayer> {
     return zoom;
   }
 
-  Coords _wrapCoords(Coords coords) {
-    var newCoords = Coords(
-      _wrapX != null
-          ? util.wrapNum(coords.x.toDouble(), _wrapX!)
-          : coords.x.toDouble(),
-      _wrapY != null
-          ? util.wrapNum(coords.y.toDouble(), _wrapY!)
-          : coords.y.toDouble(),
-    );
-    newCoords.z = coords.z.toDouble();
-    return newCoords;
-  }
-
-  bool _boundsContainsMarker(Marker marker) {
-    var pixelPoint = widget.map.project(marker.point);
-
-    final width = marker.width - marker.anchor.left;
-    final height = marker.height - marker.anchor.top;
-
-    var sw = CustomPoint(pixelPoint.x + width, pixelPoint.y - height);
-    var ne = CustomPoint(pixelPoint.x - width, pixelPoint.y + height);
-    return widget.map.pixelBounds.containsPartialBounds(Bounds(sw, ne));
-  }
-
-  Bounds _getTiledPixelBounds(LatLng center) {
-    return widget.map.getPixelBounds(_tileZoom!);
-  }
-
-  void _resetGrid() {
-    var map = widget.map;
-    var crs = map.options.crs;
-    var tileZoom = _tileZoom;
-
-    var bounds = map.getPixelWorldBounds(_tileZoom);
-    if (bounds != null) {
-      _globalTileRange = _pxBoundsToTileRange(bounds);
-    }
-
-    // wrapping
-    _wrapX = crs.wrapLng;
-    if (_wrapX != null) {
-      var first =
-          (map.project(LatLng(0.0, crs.wrapLng!.item1), tileZoom).x / 256.0)
-              .floor()
-              .toDouble();
-      var second =
-          (map.project(LatLng(0.0, crs.wrapLng!.item2), tileZoom).x / 256.0)
-              .ceil()
-              .toDouble();
-      _wrapX = Tuple2(first, second);
-    }
-
-    _wrapY = crs.wrapLat;
-    if (_wrapY != null) {
-      var first =
-          (map.project(LatLng(crs.wrapLat!.item1, 0.0), tileZoom).y / 256.0)
-              .floor()
-              .toDouble();
-      var second =
-          (map.project(LatLng(crs.wrapLat!.item2, 0.0), tileZoom).y / 256.0)
-              .ceil()
-              .toDouble();
-      _wrapY = Tuple2(first, second);
-    }
-  }
-
-  Future genrateVirtualGrids() async{
-    if (widget.options.geometryType == "point") {
-
-     if(_tileZoom! <= 14){
-       var pixelBounds = _getTiledPixelBounds(widget.map.center);
-       var tileRange = _pxBoundsToTileRange(pixelBounds);
-
-       var queue = <Coords>[];
-
-       // mark tiles as out of view...
-       for (var key in _tiles.keys) {
-         var c = _tiles[key]!.coords;
-         if (c.z != _tileZoom) {
-           _tiles[key]!.current = false;
-         }
-       }
-
-       for (var j = tileRange.min.y; j <= tileRange.max.y; j++) {
-         for (var i = tileRange.min.x; i <= tileRange.max.x; i++) {
-           var coords = Coords(i.toDouble(), j.toDouble());
-           coords.z = _tileZoom!;
-
-           if (!_isValidTile(coords)) {
-             continue;
-           }
-           // Add all valid tiles to the queue on Flutter
-           queue.add(coords);
-         }
-       }
-       if (queue.isNotEmpty) {
-         targetRequests = queue.length;
-         activeRequests = 0;
-         for (var i = 0; i < queue.length; i++) {
-           var coordsNew = _wrapCoords(queue[i]);
-
-           var bounds = coordsToBounds(coordsNew);
-           await requestFeatures(bounds);
-         }
-       }
-     } else {
-       targetRequests = 1;
-       activeRequests = 1;
-       await  requestFeatures(widget.map.getBounds());
-     }
-
-    } else {
-      targetRequests = 1;
-      activeRequests = 1;
-      await  requestFeatures(widget.map.getBounds());
-    }
-  }
-
-  LatLngBounds coordsToBounds(Coords coords) {
-    var map = widget.map;
-    var cellSize = 256.0;
-    var nwPoint = coords.multiplyBy(cellSize);
-    var sePoint = CustomPoint(nwPoint.x + cellSize, nwPoint.y + cellSize);
-    var nw = map.unproject(nwPoint, coords.z.toDouble());
-    var se = map.unproject(sePoint, coords.z.toDouble());
-    return LatLngBounds(nw, se);
-  }
-
-  bool _isValidTile(Coords coords) {
-    var crs = widget.map.options.crs;
-    if (!crs.infinite) {
-      var bounds = _globalTileRange;
-      if ((crs.wrapLng == null &&
-              (coords.x < bounds!.min.x || coords.x > bounds.max.x)) ||
-          (crs.wrapLat == null &&
-              (coords.y < bounds!.min.y || coords.y > bounds.max.y))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   void getMapState() {}
+
+  void _loadAndPruneInVisibleBounds(MapCamera camera) {
+    final tileZoom = _clampToNativeZoom(camera.zoom);
+    final visibleTileRange = _tileRangeCalculator.calculate(
+      camera: camera,
+      tileZoom: tileZoom,
+    );
+
+    _tileImageManager.evictAndPrune(
+      visibleRange: visibleTileRange,
+      pruneBuffer: max(1, 2),
+      evictStrategy: EvictErrorTileStrategy.none,
+    );
+  }
 
   Future requestFeatures(LatLngBounds bounds) async {
     try {
@@ -266,6 +234,8 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
       String url =
           '${widget.options.url}/query?f=json&geometry={"spatialReference":{"wkid":4326},$bounds_}&maxRecordCountFactor=30&outFields=*&outSR=4326&returnExceededLimitFeatures=true&spatialRel=esriSpatialRelIntersects&where=1=1&geometryType=esriGeometryEnvelope';
+
+      // print(url);
 
       Response response = await Dio().get(url);
 
@@ -289,7 +259,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
                 width: render.width,
                 height: render.height,
                 point: latLng,
-                builder: (ctx) => Container(
+                child: Container(
                     child: GestureDetector(
                   onTap: () {
                     widget.options.onTap!(feature["attributes"], latLng);
@@ -308,7 +278,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
 
               var render = widget.options.render!(feature["attributes"]);
 
-
               if (render != null) {
                 features_.add(PolygonEsri(
                   points: points,
@@ -322,7 +291,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
               }
             }
           } else if (widget.options.geometryType == "polyline") {
-
             for (var ring in feature["geometry"]["paths"]) {
               var points = <LatLng>[];
 
@@ -377,7 +345,7 @@ class _FeatureLayerState extends State<FeatureLayer> {
   }
 
   LatLng _offsetToCrs(Offset offset) {
-    // Get the widget's offset
+    final camera = MapCamera.of(context);
     var renderObject = context.findRenderObject() as RenderBox;
     var width = renderObject.size.width;
     var height = renderObject.size.height;
@@ -386,9 +354,9 @@ class _FeatureLayerState extends State<FeatureLayer> {
     var localPoint = _offsetToPoint(offset);
     var localPointCenterDistance =
         CustomPoint((width / 2) - localPoint.x, (height / 2) - localPoint.y);
-    var mapCenter = widget.map.project(widget.map.center);
+    var mapCenter = camera.project(camera.center);
     var point = mapCenter - localPointCenterDistance;
-    return widget.map.unproject(point);
+    return camera.unproject(point);
   }
 
   CustomPoint _offsetToPoint(Offset offset) {
@@ -396,79 +364,76 @@ class _FeatureLayerState extends State<FeatureLayer> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void dispose() {
+    _tileUpdateSubscription?.cancel();
+    _tileImageManager.removeAll(EvictErrorTileStrategy.none);
+    _resetSub?.cancel();
+    _pruneLater?.cancel();
 
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     if (widget.options.geometryType == "point") {
-      return StreamBuilder<void>(
-        stream: widget.stream,
-        builder: (BuildContext context, _) {
-          return _buildMarkers(context);
-        },
-      );
+      return _buildMarkers(context);
     } else if (widget.options.geometryType == "polyline") {
-      return StreamBuilder<void>(
-        stream: widget.stream,
-        builder: (BuildContext context, _) {
-          return LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints bc) {
-              // TODO unused BoxContraints should remove?
-              final size = Size(bc.maxWidth, bc.maxHeight);
-              return _buildPoygonLines(context, size);
-            },
-          );
+      return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints bc) {
+          // TODO unused BoxContraints should remove?
+          final size = Size(bc.maxWidth, bc.maxHeight);
+          return _buildPoygonLines(context, size);
         },
       );
     } else {
-      return StreamBuilder<void>(
-        stream: widget.stream,
-        builder: (BuildContext context, _) {
-          return LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints bc) {
-              // TODO unused BoxContraints should remove?
-              final size = Size(bc.maxWidth, bc.maxHeight);
-              return _buildPoygons(context, size);
-            },
-          );
+      return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints bc) {
+          // TODO unused BoxContraints should remove?
+          final size = Size(bc.maxWidth, bc.maxHeight);
+          return _buildPoygons(context, size);
         },
       );
     }
   }
 
   Widget _buildMarkers(BuildContext context) {
-    var elements = <Widget>[];
-    if (features.isNotEmpty) {
-      for (var markerOpt in features) {
-        if (!(markerOpt is PolygonEsri)) {
-          var pos = widget.map.project(markerOpt.point);
-          pos = pos.multiplyBy(
-                  widget.map.getZoomScale(widget.map.zoom, widget.map.zoom)) -
-              widget.map.getPixelOrigin();
-
-          var pixelPosX =
-              (pos.x - (markerOpt.width - markerOpt.anchor.left)).toDouble();
-          var pixelPosY =
-              (pos.y - (markerOpt.height - markerOpt.anchor.top)).toDouble();
-
-          if (!_boundsContainsMarker(markerOpt)) {
-            continue;
-          }
-
-          elements.add(
-            Positioned(
-              width: markerOpt.width,
-              height: markerOpt.height,
-              left: pixelPosX,
-              top: pixelPosY,
-              child: markerOpt.builder(context),
-            ),
-          );
-        }
-      }
-    }
-
-    return Container(
+    final map = MapCamera.of(context);
+    var alignment = Alignment.center;
+    return MobileLayerTransformer(
       child: Stack(
-        children: elements,
+        children: (List<dynamic> markers) sync* {
+          for (final m in features) {
+            // Resolve real alignment
+            final left = 0.5 * m.width * ((m.alignment ?? alignment).x + 1);
+            final top = 0.5 * m.height * ((m.alignment ?? alignment).y + 1);
+            final right = m.width - left;
+            final bottom = m.height - top;
+
+            // Perform projection
+            final pxPoint = map.project(m.point);
+
+            // Cull if out of bounds
+            if (!map.pixelBounds.containsPartialBounds(
+              Bounds(
+                Point(pxPoint.x + left, pxPoint.y - bottom),
+                Point(pxPoint.x - right, pxPoint.y + top),
+              ),
+            )) continue;
+
+            // Apply map camera to marker position
+            final pos = pxPoint - map.pixelOrigin.toDoublePoint();
+
+            yield Positioned(
+              key: m.key,
+              width: m.width,
+              height: m.height,
+              left: pos.x - right,
+              top: pos.y - bottom,
+              child: m.child,
+            );
+          }
+        }(features)
+            .toList(),
       ),
     );
   }
@@ -476,16 +441,18 @@ class _FeatureLayerState extends State<FeatureLayer> {
   Widget _buildPoygons(BuildContext context, Size size) {
     var elements = <Widget>[];
     if (features.isNotEmpty) {
+      final camera = MapCamera.of(context);
       for (var polygon in features) {
         if (polygon is PolygonEsri) {
           polygon.offsets.clear();
           var i = 0;
 
           for (var point in polygon.points) {
-            var pos = widget.map.project(point);
-            pos = pos.multiplyBy(
-                    widget.map.getZoomScale(widget.map.zoom, widget.map.zoom)) -
-                widget.map.getPixelOrigin();
+            var pos = camera
+                .project(point)
+                .subtract(camera.pixelOrigin)
+                .toDoublePoint();
+
             polygon.offsets.add(Offset(pos.x.toDouble(), pos.y.toDouble()));
             if (i > 0 && i < polygon.points.length) {
               polygon.offsets.add(Offset(pos.x.toDouble(), pos.y.toDouble()));
@@ -502,10 +469,11 @@ class _FeatureLayerState extends State<FeatureLayer> {
                   var latLng = _offsetToCrs(offset);
                   findTapedPolygon(latLng);
                 },
-                child: CustomPaint(
-                  painter: PolygonPainter(polygon),
+                child: MobileLayerTransformer(
+                    child: CustomPaint(
+                  painter: PolygonPainter([polygon], camera, false, false),
                   size: size,
-                )),
+                ))),
           );
 //          elements.add(
 //              CustomPaint(
@@ -520,7 +488,6 @@ class _FeatureLayerState extends State<FeatureLayer> {
 //              size: size,
 //            )
 //        );
-
         }
       }
     }
@@ -536,17 +503,17 @@ class _FeatureLayerState extends State<FeatureLayer> {
     var elements = <Widget>[];
 
     if (features.isNotEmpty) {
+      final camera = MapCamera.of(context);
       for (var polyLine in features) {
-
         if (polyLine is PolyLineEsri) {
           polyLine.offsets.clear();
           var i = 0;
 
           for (var point in polyLine.points) {
-            var pos = widget.map.project(point);
-            pos = pos.multiplyBy(
-                    widget.map.getZoomScale(widget.map.zoom, widget.map.zoom)) -
-                widget.map.getPixelOrigin();
+            var pos = camera
+                .project(point)
+                .subtract(camera.pixelOrigin)
+                .toDoublePoint();
             polyLine.offsets.add(Offset(pos.x.toDouble(), pos.y.toDouble()));
             if (i > 0 && i < polyLine.points.length) {
               polyLine.offsets.add(Offset(pos.x.toDouble(), pos.y.toDouble()));
@@ -563,25 +530,13 @@ class _FeatureLayerState extends State<FeatureLayer> {
                   var latLng = _offsetToCrs(offset);
                   findTapedPolygon(latLng);
                 },
-                child: CustomPaint(
-                  painter: PolylinePainter(polyLine, false),
+                child: MobileLayerTransformer(
+                    child: CustomPaint(
+                  painter:
+                      PolylinePainter([polyLine] as List<Polyline>, camera),
                   size: size,
-                )),
+                ))),
           );
-//          elements.add(
-//              CustomPaint(
-//                painter: PolygonPainter(polygon),
-//                size: size,
-//              )
-//          );
-
-//        elements.add(
-//            CustomPaint(
-//              painter:  PolygonPainter(polygon),
-//              size: size,
-//            )
-//        );
-
         }
       }
     }
